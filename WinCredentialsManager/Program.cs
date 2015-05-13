@@ -95,22 +95,22 @@ namespace WinCredentialsManager
         {
             var credentials = CredentialManager.EnumerateCrendentials();
             if (!String.IsNullOrEmpty(userNameFilter))
-                credentials = credentials.Where(x => x.UserName.StartsWith(userNameFilter)).ToList();
+                credentials = credentials.Where(x => (x.UserName != null && x.UserName.ToLower().Contains(userNameFilter.ToLower()))).ToList();
             foreach (var credential in credentials)
             {
                 string message = String.Empty;
                 if (showPassword)
                     message = String.Format("{0} {1} {2} {3}",
                         credential.CredentialType.ToString(),
-                        credential.ApplicationName,
-                        credential.UserName, 
-                        credential.Password);
+                        credential.ApplicationName ?? "(none)",
+                        credential.UserName ?? "(none)", 
+                        credential.Password ?? "(Password not available)");
                 else                   
                 {
                    message = String.Format("{0} {1} {2}",
                     credential.CredentialType.ToString(),
-                    credential.ApplicationName,
-                    credential.UserName);
+                    credential.ApplicationName ?? "(none)",
+                    credential.UserName ?? "(none)");
                 }
                 Console.WriteLine(message);
             }
@@ -122,11 +122,21 @@ namespace WinCredentialsManager
             {
                 try
                 {
-                    Console.WriteLine("Processing Credential {0}:{1}", credential.ApplicationName, credential.UserName);
-                    if (credential.UserName.Contains(userNameFilter))
+                    Console.Write("Processing Credential {0}:{1}", credential.ApplicationName, credential.UserName);
+                    if (!string.IsNullOrEmpty(credential.UserName) && credential.UserName.ToLower().Contains(userNameFilter.ToLower()))
                     {
-                        CredentialManager.WriteCredential(credential.ApplicationName, credential.UserName, newPassword, credential.CredentialType);                        
+                        CredentialManager.WriteCredential(credential.ApplicationName, credential.UserName, newPassword, credential.CredentialType);        
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.Write(" Changed!");
+                        Console.ResetColor();
                     }
+                    else
+                    {
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.Write(" Skipped");
+                        Console.ResetColor();
+                    }
+                    Console.WriteLine();
                 }
                 catch (Exception ex)
                 {
